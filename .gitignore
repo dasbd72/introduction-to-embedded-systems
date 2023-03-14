@@ -6,5 +6,7 @@ arduino_build/*.a
 arduino_build/*.o
 arduino_build/new
 
+test
+
 *.hex
 *.out

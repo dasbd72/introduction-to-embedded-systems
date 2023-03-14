@@ -1,4 +1,4 @@
-SOURCE = $(wildcard *.c) $(wildcard lab*/*.c)
+SOURCE ?= $(wildcard *.c) $(wildcard lab*/*.c) $(wildcard test/*.c)
 TARGET ?= $(SOURCE:.c=)
 
 AVR_PATH = ./arduino_build
@@ -27,7 +27,7 @@ HEX = $(TARGET:=.hex)
 
 default: $(HEX)
 clean:
-	$(RM) *.out *.hex lab*/*.out lab*/*.hex
+	$(RM) *.out *.hex lab*/*.out lab*/*.hex test/*.out test/*.hex
 	$(RM) $(TARGET)
 upload: $(lastword $(HEX))
 	avrdude -c arduino -p m328p -b 115200 -P $(PORT) -U flash:w:$(HEX)

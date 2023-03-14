@@ -12,3 +12,7 @@ make
 ```bash
 make all TARGET="File path without extension"
 ```
+Or
+```bash
+make all SOURCE="File path"
+```
