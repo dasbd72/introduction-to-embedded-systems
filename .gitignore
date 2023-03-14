@@ -1,0 +1,10 @@
+.DS_Store
+
+arduino_build/include
+arduino_build/lib
+arduino_build/*.a
+arduino_build/*.o
+arduino_build/new
+
+*.hex
+*.out
