@@ -1,5 +1,14 @@
 # Embeddded Systems Lab
 
+## Build Environment
+
+```bash
+cd arduino_build
+make
+```
+
 ## Compile and Upload
 
-`make all TARGET="File path without extension"`
+```bash
+make all TARGET="File path without extension"
+```
