@@ -6,9 +6,9 @@
 #define ADJ 5
 
 volatile uint8_t prev_PIND = 0xFF;
-volatile uint8_t R = MAX;
-volatile uint8_t G = MAX;
-volatile uint8_t B = MAX;
+volatile int R = MAX;
+volatile int G = MAX;
+volatile int B = MAX;
 
 ISR(PCINT2_vect) {
     int activate_PIND = PIND & ~prev_PIND;
@@ -78,9 +78,9 @@ void setup() {
 }
 
 void loop() {
-    OCR1A = R;
-    OCR1B = G;
-    OCR2A = B;
+    OCR1A = (uint16_t) R;
+    OCR1B = (uint16_t) G;
+    OCR2A = (uint8_t) B;
 }
 
 int main(void) {
