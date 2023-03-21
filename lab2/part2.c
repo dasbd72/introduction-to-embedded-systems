@@ -3,12 +3,14 @@
 #include <util/delay.h>
 // #define MAX 255
 #define MAX 25
+#define MIN 0
 #define ADJ 5
+#define INIT 0
 
 volatile uint8_t prev_PIND = 0xFF;
-volatile int R = MAX;
-volatile int G = MAX;
-volatile int B = MAX;
+volatile int R = INIT;
+volatile int G = INIT;
+volatile int B = INIT;
 
 ISR(PCINT2_vect) {
     int activate_PIND = PIND & ~prev_PIND;
@@ -17,19 +19,19 @@ ISR(PCINT2_vect) {
         R = R + ADJ > MAX ? MAX : R + ADJ;
     }
     if ((activate_PIND >> PD3) & 1) {
-        R = R - ADJ < 0 ? 0 : R - ADJ;
+        R = R < ADJ + MIN ? MIN : R - ADJ;
     }
     if ((activate_PIND >> PD4) & 1) {
         G = G + ADJ > MAX ? MAX : G + ADJ;
     }
     if ((activate_PIND >> PD5) & 1) {
-        G = G - ADJ < 0 ? 0 : G - ADJ;
+        G = G < ADJ + MIN ? MIN : G - ADJ;
     }
     if ((activate_PIND >> PD6) & 1) {
         B = B + ADJ > MAX ? MAX : B + ADJ;
     }
     if ((activate_PIND >> PD7) & 1) {
-        B = B - ADJ < 0 ? 0 : B - ADJ;
+        B = B < ADJ + MIN ? MIN : B - ADJ;
     }
 
     prev_PIND = PIND;
@@ -78,9 +80,9 @@ void setup() {
 }
 
 void loop() {
-    OCR1A = (uint16_t) R;
-    OCR1B = (uint16_t) G;
-    OCR2A = (uint8_t) B;
+    OCR1A = (uint16_t)R;
+    OCR1B = (uint16_t)G;
+    OCR2A = (uint8_t)B;
 }
 
 int main(void) {
