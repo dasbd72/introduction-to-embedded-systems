@@ -105,6 +105,9 @@ void setup() {
     // TCCR2A |= (1 << WGM20) | (1 << WGM21);  // Fast PWM, TOP = 0xFF
     // TCCR2B |= (1 << CS20);
 
+    // === UART ===
+    // uart_init();
+
     // === Interrupt ===
     // PCICR |= (1 << PCIE0);     // Enable PCINT[7:0]
     // PCMSK0 |= (1 << PCINT0);   // Enable PCINT0 (B0)
@@ -134,9 +137,6 @@ void setup() {
     // PCMSK2 |= (1 << PCINT23);  // Enable PCINT23 (D7)
     // sei();                     // Enable interrupts
     // cli();                     // Disable interrupts
-
-    // === UART ===
-    // uart_init();
 }
 
 void loop() {
