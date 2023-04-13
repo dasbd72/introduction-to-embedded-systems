@@ -1,4 +1,4 @@
-SOURCE ?= $(wildcard *.c) $(wildcard lab*/*.c) $(wildcard test/*.c)
+SOURCE ?= $(wildcard *.c) $(wildcard lab*/*.c) $(wildcard test/*.c) $(wildcard templates/*.c)
 TARGET ?= $(SOURCE:.c=)
 
 AVR_PATH = ./arduino_build

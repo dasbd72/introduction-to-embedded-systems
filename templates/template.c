@@ -6,23 +6,32 @@
 #define BAUDRATE 9600
 #define BAUD_PRESCALLER (F_CPU / 16 / BAUDRATE - 1)
 
-volatile uint8_t activate_PINB = 0xFF;
-volatile uint8_t activate_PINC = 0xFF;
-volatile uint8_t activate_PIND = 0xFF;
 volatile uint8_t prev_PINB = 0xFF;
 volatile uint8_t prev_PINC = 0xFF;
 volatile uint8_t prev_PIND = 0xFF;
+volatile uint8_t activate_PINB = 0xFF;
+volatile uint8_t activate_PINC = 0xFF;
+volatile uint8_t activate_PIND = 0xFF;
+volatile uint8_t deactivate_PINB = 0xFF;
+volatile uint8_t deactivate_PINC = 0xFF;
+volatile uint8_t deactivate_PIND = 0xFF;
 
 ISR(PCINT0_vect) {
     activate_PINB = PINB & ~prev_PINB;
+    deactivate_PINB = ~PINB & prev_PINB;
+
     prev_PINB = PINB;
 }
 ISR(PCINT1_vect) {
     activate_PINC = PINC & ~prev_PINC;
+    deactivate_PINC = ~PINC & prev_PINC;
+
     prev_PINC = PINC;
 }
 ISR(PCINT2_vect) {
     activate_PIND = PIND & ~prev_PIND;
+    deactivate_PIND = ~PIND & prev_PIND;
+
     prev_PIND = PIND;
 }
 
@@ -46,22 +55,55 @@ uint8_t uart_receivebyte(void) {
 }
 
 void setup() {
-    // Membrane Rows
-    for (int i = 6; i <= 7; i++) {
-        DDRD |= (1 << i);
-    }
-    for (int i = 0; i <= 1; i++) {
-        DDRB |= (1 << i);
-    }
+    // === Output ===
+    // for (int i = PD0; i <= PD7; i++) {
+    //     DDRD |= _BV(i);
+    //     PORTD &= ~_BV(i);
+    // }
+    // for (int i = PC0; i <= PC6; i++) {
+    //     DDRC |= _BV(i);
+    //     PORTC &= ~_BV(i);
+    // }
+    // for (int i = PB0; i <= PB7; i++) {
+    //     if (i != PB5) {
+    //         DDRB |= _BV(i);
+    //         PORTB &= ~_BV(i);
+    //     }
+    // }
 
-    // Membrane Columns
-    for (int i = 2; i <= 5; i++) {
-        DDRD &= ~(1 << i);
-    }
+    // Built in led Output
+    // DDRB |= (1 << PB5);
+    // PORTB &= ~(1 << PB5);
 
-    // Built in led ouptut
-    DDRB |= (1 << PB5);  // Debug led
-    PORTB &= ~(1 << PB5);
+    // Timer Output
+    // DDRB |= _BV(PB1);  // OC1A (D9)
+    // DDRB |= _BV(PB2);  // OC1B (D10)
+    // DDRB |= _BV(PB3);  // OC2A (D11)
+    // DDRD |= _BV(PD3);  // OC2B (D3)
+    // DDRD |= _BV(PD5);  // OC0B (D5)
+    // DDRD |= _BV(PD6);  // OC0A (D6)
+
+    // === Input ===
+    // for (int i = PD0; i <= PD7; i++) {
+    //     DDRD &= ~_BV(i);
+    // }
+    // for (int i = PC0; i <= PC6; i++) {
+    //     DDRC &= ~_BV(i);
+    // }
+    // for (int i = PB0; i <= PB7; i++) {
+    //     DDRB &= ~_BV(i);
+    // }
+
+    // === PWM ===
+    // TCCR1A |= (1 << COM1A1);                // Enable PWM (D9)
+    // TCCR1A |= (1 << COM1B1);                // Enable PWM (D10)
+    // TCCR1A |= (1 << WGM11);                 // Fast PWM
+    // TCCR1B |= (1 << WGM12) | (1 << WGM13);  // Fast PWM
+    // TCCR1B |= (1 << CS10);
+    // ICR1 = 0xFF;
+    // TCCR2A |= (1 << COM2A1);                // Enable PWM (D11)
+    // TCCR2A |= (1 << WGM20) | (1 << WGM21);  // Fast PWM, TOP = 0xFF
+    // TCCR2B |= (1 << CS20);
 
     // === Interrupt ===
     // PCICR |= (1 << PCIE0);     // Enable PCINT[7:0]
@@ -91,6 +133,10 @@ void setup() {
     // PCMSK2 |= (1 << PCINT22);  // Enable PCINT22 (D6)
     // PCMSK2 |= (1 << PCINT23);  // Enable PCINT23 (D7)
     // sei();                     // Enable interrupts
+    // cli();                     // Disable interrupts
+
+    // === UART ===
+    // uart_init();
 }
 
 void loop() {
@@ -98,7 +144,6 @@ void loop() {
 
 int main(void) {
     setup();
-    uart_init();
     while (1) {
         loop();
     }
