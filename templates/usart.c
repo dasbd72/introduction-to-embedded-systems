@@ -1,10 +1,8 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include <i2c_slave.h>
 #include <string.h>
 #include <usart.h>
 #include <util/delay.h>
-// #include <i2c_master.h>
 
 volatile uint8_t prev_PINB = 0xFF;
 volatile uint8_t prev_PINC = 0xFF;
@@ -35,29 +33,29 @@ ISR(PCINT2_vect) {
     prev_PIND = PIND;
 }
 
-// volatile uint8_t usart_rx_data[100];
-// volatile int usart_rx_idx = 0;
-// volatile uint8_t usart_rxc = 0;
+volatile uint8_t usart_rx_data[100];
+volatile int usart_rx_idx = 0;
+volatile uint8_t usart_rxc = 0;
 
-// void int_usart_recievebyte() {
-//     uint8_t data = UDR0;
-//     if (data == '\r') {
-//         usart_rx_data[usart_rx_idx] = '\0';
-//         usart_rx_idx = 0;
-//         usart_rxc = 1;
-//     } else {
-//         usart_rx_data[usart_rx_idx++] = data;
-//         usart_rxc = 0;
-//     }
-// }
+void int_usart_recievebyte() {
+    uint8_t data = UDR0;
+    if (data == '\r') {
+        usart_rx_data[usart_rx_idx] = '\0';
+        usart_rx_idx = 0;
+        usart_rxc = 1;
+    } else {
+        usart_rx_data[usart_rx_idx++] = data;
+        usart_rxc = 0;
+    }
+}
 
-// ISR(USART_RX_vect) {
-//     cli();
-//     if (UCSR0A & (1 << RXC0)) {
-//         int_usart_recievebyte();
-//     }
-//     sei();
-// }
+ISR(USART_RX_vect) {
+    cli();
+    if (UCSR0A & (1 << RXC0)) {
+        int_usart_recievebyte();
+    }
+    sei();
+}
 
 // #define SLAVE_ADDRESS 0x20
 // volatile uint8_t receivedData;
@@ -84,16 +82,16 @@ ISR(PCINT2_vect) {
 //     TWCR = (1 << TWIE) | (1 << TWEA) | (1 << TWEN) | (1 << TWINT);  // Enable TWI, Acknowledge on
 // }
 
-// void loop() {
-//     if (usart_rxc == 1) {
-//         cli();
-//         usart_sendstr("RECEIVED: ");
-//         usart_sendstr(usart_rx_data);
-//         usart_sendstr("LISTEN");
-//         usart_rxc = 0;
-//         sei();
-//     }
-// }
+void loop() {
+    if (usart_rxc == 1) {
+        cli();
+        usart_sendstr("RECEIVED: ");
+        usart_sendstr(usart_rx_data);
+        usart_sendstr("LISTEN");
+        usart_rxc = 0;
+        sei();
+    }
+}
 
 void setup() {
     // === Output ===
@@ -113,8 +111,8 @@ void setup() {
     // }
 
     // Built in led Output
-    // DDRB |= (1 << PB5);
-    // PORTB &= ~(1 << PB5);
+    DDRB |= (1 << PB5);
+    PORTB &= ~(1 << PB5);
 
     // Timer Output
     // DDRB |= _BV(PB1);  // OC1A (D9)
@@ -148,7 +146,7 @@ void setup() {
 
     // === UART ===
     // usart_init();
-    // int_usart_init();
+    int_usart_init();
 
     // === I2C ===
     // i2c_init();
@@ -182,8 +180,7 @@ void setup() {
     // PCMSK2 |= (1 << PCINT21);  // Enable PCINT21 (D5)
     // PCMSK2 |= (1 << PCINT22);  // Enable PCINT22 (D6)
     // PCMSK2 |= (1 << PCINT23);  // Enable PCINT23 (D7)
-    // sei();                     // Enable interrupts
-    // cli();                     // Disable interrupts
+    sei();  // Enable interrupts
 }
 
 int main(void) {

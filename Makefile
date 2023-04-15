@@ -2,11 +2,13 @@ SOURCE ?= $(wildcard *.c) $(wildcard lab*/*.c) $(wildcard test/*.c) $(wildcard t
 TARGET ?= $(SOURCE:.c=)
 
 AVR_PATH = ./arduino_build
-PORT = /dev/tty.usbserial-10
+PORT = /dev/tty.usbserial-110
+BAUDRATE = 9600
 
 CC = avr-gcc
 CXX = avr-g++
-CFLAGS = -L $(AVR_PATH) -I $(AVR_PATH) -I ./include -Wall -DF_CPU=16000000UL -Os -mmcu=atmega328p
+DEF = -DF_CPU=16000000UL -DBAUDRATE=$(BAUDRATE)
+CFLAGS = -L $(AVR_PATH) -I $(AVR_PATH) -I ./include -Wall $(DEF) -Os -mmcu=atmega328p
 
 ifeq ($(OS),Windows_NT)
 	RM = del
@@ -35,6 +37,6 @@ all: default upload
 
 .PHONY: test monitor
 monitor: 
-	@screen $(PORT)
+	@screen $(PORT) $(BAUDRATE)
 test:
 	@echo $(lastword $(HEX))
