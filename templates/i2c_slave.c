@@ -1,73 +1,67 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <i2c_slave.h>
+#include <stdio.h>
+#include <string.h>
+#include <uart.h>
 #include <util/delay.h>
+#include <util/twi.h>
 
 #define SLAVE_ADDRESS 0x20
-#define I2C_BIT_RATE (((F_CPU / 100000UL) - 16) / 2)
-
 volatile uint8_t receivedData;  // Global variable to store received data
 
-void i2c_init() {
-    TWSR = 0x00;                                      // Set prescaler to 1
-    TWBR = I2C_BIT_RATE;                              // Set bit rate
-    TWAR = (SLAVE_ADDRESS << 1);                      // Set slave address
-    TWCR = (1 << TWEA) | (1 << TWEN) | (1 << TWINT);  // Enable TWI, Acknowledge on
-    receivedData = 0;                                 // Initialize received data to 0
-}
-
 ISR(TWI_vect) {
-    uint8_t status = TWSR & 0xF8;  // Read TWI status register and mask out prescaler bits
-
-    switch (status) {
-        case 0x60:                               // SLA+W received, ACK returned
-        case 0x70:                               // SLA+W received, ACK returned after a general call
-            receivedData = TWDR;                 // Read data from TWDR register
-            TWCR |= (1 << TWEA) | (1 << TWINT);  // Enable TWI, Acknowledge on
+    uart_sendhex(TW_STATUS);
+    switch (TW_STATUS) {
+        case TW_SR_SLA_ACK:       // SLA+W received, ACK returned
+        case TW_SR_DATA_ACK:      // SLA+W received, ACK returned after a general call
+            receivedData = TWDR;  // Read data from TWDR register
+            uart_sendint(receivedData);
+            if (receivedData >= 1 && receivedData <= 9) {
+                PORTB |= (1 << PB5);
+                uart_sendbyte(receivedData);
+            } else {
+                PORTB &= ~(1 << PB5);
+            }
             break;
-        case 0xA8:                               // SLA+R received, ACK returned
-        case 0xB8:                               // Data byte transmitted, ACK returned
-            TWDR = receivedData;                 // Write data to TWDR register
-            TWCR |= (1 << TWEA) | (1 << TWINT);  // Enable TWI, Acknowledge on
+        case TW_ST_SLA_ACK:       // SLA+R received, ACK returned
+        case TW_ST_DATA_ACK:      // Data byte transmitted, ACK returned
+            TWDR = receivedData;  // Write data to TWDR register
             break;
-        case 0xC0:                               // Data byte transmitted, NACK returned
-        case 0xC8:                               // Last data byte transmitted, ACK returned
-            TWCR |= (1 << TWEA) | (1 << TWINT);  // Enable TWI, Acknowledge on
+        case TW_ST_DATA_NACK:  // Data byte transmitted, NACK returned
+        case TW_ST_LAST_DATA:  // Last data byte transmitted, ACK returned
             break;
-        case 0x00:                                              // Bus error occurred
-        case 0x20:                                              // SLA+W received, NACK returned
-        case 0x30:                                              // Data byte transmitted, NACK returned
-        default:                                                // default
-            TWCR |= (1 << TWEA) | (1 << TWINT) | (1 << TWSTO);  // Enable TWI, Acknowledge on, Stop condition
+        case TW_BUS_ERROR:     // Bus error occurred
+        case TW_MT_SLA_NACK:   // SLA+W received, NACK returned
+        case TW_MT_DATA_NACK:  // Data byte transmitted, NACK returned
+        default:               // default
             break;
     }
+    TWCR = (1 << TWIE) | (1 << TWEA) | (1 << TWEN) | (1 << TWINT);  // Enable TWI, Acknowledge on
 }
 
 void setup() {
+    // === Ouput ===
     // Built in led Output
     DDRB |= (1 << PB5);
     PORTB &= ~(1 << PB5);
 
+    // === input ===
+
     // === UART ===
-    // uart_init();
+    uart_init();
 
     // === I2C ===
     i2c_init();
+    i2c_address(SLAVE_ADDRESS);
+    receivedData = 0;
 
     // === Interrupt ===
     sei();  // Enable interrupts
 }
 
 void loop() {
-    // Perform any tasks with the received data
-    if (receivedData == 'H') {
-        // If received 'H', turn on the LED
-        PORTB |= (1 << PB5);
-    } else {
-        // Otherwise, turn off the LED
-        PORTB &= ~(1 << PB5);
-    }
-
-    _delay_ms(100);
+    _delay_ms(1000);
 }
 
 int main(void) {

@@ -1,10 +1,10 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <i2c_slave.h>
 #include <string.h>
+#include <uart.h>
 #include <util/delay.h>
-
-#define BAUDRATE 9600
-#define BAUD_PRESCALLER (F_CPU / 16 / BAUDRATE - 1)
+// #include <i2c_master.h>
 
 volatile uint8_t prev_PINB = 0xFF;
 volatile uint8_t prev_PINC = 0xFF;
@@ -35,24 +35,30 @@ ISR(PCINT2_vect) {
     prev_PIND = PIND;
 }
 
-void uart_init(void) {
-    UBRR0H = (uint8_t)(BAUD_PRESCALLER >> 8);
-    UBRR0L = (uint8_t)(BAUD_PRESCALLER);
-    UCSR0B = (1 << RXEN0) | (1 << TXEN0);
-    UCSR0C = (3 << UCSZ00);
-}
+// #define SLAVE_ADDRESS 0x20
+// volatile uint8_t receivedData;
 
-void uart_sendbyte(uint8_t data) {
-    while (!(UCSR0A & (1 << UDRE0)))
-        ;
-    UDR0 = data;
-}
-
-uint8_t uart_receivebyte(void) {
-    while (!(UCSR0A & (1 << RXC0)))
-        ;
-    return UDR0;
-}
+// ISR(TWI_vect) {
+//     switch (TW_STATUS) {
+//         case TW_SR_SLA_ACK:       // SLA+W received, ACK returned
+//         case TW_SR_DATA_ACK:      // SLA+W received, ACK returned after a general call
+//             receivedData = TWDR;  // Read data from TWDR register
+//             break;
+//         case TW_ST_SLA_ACK:       // SLA+R received, ACK returned
+//         case TW_ST_DATA_ACK:      // Data byte transmitted, ACK returned
+//             TWDR = receivedData;  // Write data to TWDR register
+//             break;
+//         case TW_ST_DATA_NACK:  // Data byte transmitted, NACK returned
+//         case TW_ST_LAST_DATA:  // Last data byte transmitted, ACK returned
+//             break;
+//         case TW_BUS_ERROR:     // Bus error occurred
+//         case TW_MT_SLA_NACK:   // SLA+W received, NACK returned
+//         case TW_MT_DATA_NACK:  // Data byte transmitted, NACK returned
+//         default:               // default
+//             break;
+//     }
+//     TWCR = (1 << TWIE) | (1 << TWEA) | (1 << TWEN) | (1 << TWINT);  // Enable TWI, Acknowledge on
+// }
 
 void setup() {
     // === Output ===
@@ -107,6 +113,11 @@ void setup() {
 
     // === UART ===
     // uart_init();
+
+    // === I2C ===
+    // i2c_init();
+    // receivedData = 0;
+    // i2c_address(SLAVE_ADDRESS);
 
     // === Interrupt ===
     // PCICR |= (1 << PCIE0);     // Enable PCINT[7:0]

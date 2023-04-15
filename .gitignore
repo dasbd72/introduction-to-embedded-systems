@@ -1,4 +1,5 @@
 .DS_Store
+.vscode
 
 arduino_build/include
 arduino_build/lib
