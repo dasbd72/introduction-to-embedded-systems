@@ -2,13 +2,14 @@ SOURCE ?= $(wildcard *.c) $(wildcard lab*/*.c) $(wildcard test/*.c) $(wildcard t
 TARGET ?= $(SOURCE:.c=)
 
 AVR_PATH = ./arduino_build
-PORT = /dev/tty.usbserial-110
-BAUDRATE = 9600
+PORT ?= /dev/tty.usbserial-120
+BAUDRATE=9600
+I2C_CONFIG_F_SCL=100000UL
 
 CC = avr-gcc
 CXX = avr-g++
-DEF = -DF_CPU=16000000UL -DBAUDRATE=$(BAUDRATE)
-CFLAGS = -L $(AVR_PATH) -I $(AVR_PATH) -I ./include -Wall $(DEF) -Os -mmcu=atmega328p
+DEFINE = -DF_CPU=16000000UL -DBAUDRATE=$(BAUDRATE) -DI2C_CONFIG_F_SCL=$(I2C_CONFIG_F_SCL)
+CFLAGS = -L $(AVR_PATH) -I $(AVR_PATH) -I ./include -Wall $(DEFINE) -Os -mmcu=atmega328p
 
 ifeq ($(OS),Windows_NT)
 	RM = del
@@ -35,8 +36,9 @@ upload: $(lastword $(HEX))
 	avrdude -c arduino -p m328p -b 115200 -P $(PORT) -U flash:w:$(HEX)
 all: default upload
 
-.PHONY: test monitor
+.PHONY: test monitor um
 monitor: 
 	@screen $(PORT) $(BAUDRATE)
+um: upload monitor
 test:
 	@echo $(lastword $(HEX))
