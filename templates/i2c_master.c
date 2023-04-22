@@ -1,65 +1,57 @@
+#include <avr/interrupt.h>
 #include <avr/io.h>
+#include <i2c_master.h>
+#include <stdio.h>
+#include <string.h>
+#include <usart.h>
 #include <util/delay.h>
+#include <util/twi.h>
 
-#define SLAVE_ADDRESS 0x20
-#define I2C_BIT_RATE (((F_CPU / 100000UL) - 16) / 2)
+volatile uint8_t i2c_addr;  // Target address
+volatile uint8_t i2c_mode;  // Target mode (I2C_TRANSFER or I2C_RECEIVE)
+volatile uint8_t i2c_data;  // Global variable to store received data
+volatile uint8_t i2c_buffer[10];
+volatile uint8_t i2c_size = 0;
+volatile uint8_t i2c_index = 0;
 
-void i2c_init() {
-    TWSR = 0x00;          // Set prescaler to 1
-    TWBR = I2C_BIT_RATE;  // Set bit rate
-    TWCR = (1 << TWEN);   // Enable TWI
-}
-
-void i2c_start() {
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);  // Send start condition
-    while (!(TWCR & (1 << TWINT)))
-        ;  // Wait for start condition to be transmitted
-}
-
-void i2c_stop() {
-    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);  // Send stop condition
-}
-
-void i2c_write(uint8_t data) {
-    TWDR = data;                        // Load data into TWDR register
-    TWCR = (1 << TWINT) | (1 << TWEN);  // Start transmission
-    while (!(TWCR & (1 << TWINT)))
-        ;  // Wait for data to be transmitted
-}
-
-uint8_t i2c_read_ack() {
-    TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);  // Enable ACK and start reception
-    while (!(TWCR & (1 << TWINT)))
-        ;         // Wait for data to be received
-    return TWDR;  // Read data from TWDR register
-}
-
-uint8_t i2c_read_nack() {
-    TWCR = (1 << TWINT) | (1 << TWEN);  // Enable NACK and start reception
-    while (!(TWCR & (1 << TWINT)))
-        ;         // Wait for data to be received
-    return TWDR;  // Read data from TWDR register
-}
-
-void i2c_send_data(uint8_t slave_addr, uint8_t data) {
-    i2c_start();                 // Send start condition
-    i2c_write(slave_addr << 1);  // Send slave address with write bit
-    i2c_write(data);             // Send data
-    i2c_stop();                  // Send stop condition
-}
-
-uint8_t i2c_receive_data() {
-    i2c_start();                             // Send start condition
-    i2c_write((SLAVE_ADDRESS << 1) | 0x01);  // Send slave address with read bit
-    uint8_t receivedData = i2c_read_nack();  // Receive data with NACK
-    i2c_stop();                              // Send stop condition
-    return receivedData;                     // Return received data
+ISR(TWI_vect) {
+    usart_sendhex(TW_STATUS);
+    switch (TW_STATUS) {
+        case TW_START:        // Start condition transmitted
+        case TW_REP_START:    // Repeated start condition transmitted
+        case TW_MT_ARB_LOST:  // Arbitration lost in SLA+W or data
+            // Send slave address
+            i2c_index = 0;
+            i2c_address(i2c_addr, I2C_TRANSFER);
+            break;
+        case TW_MT_SLA_ACK:   // SLA+W transmitted, ACK received = Slave receiver ACKed address
+        case TW_MT_DATA_ACK:  // Data transmitted, ACK received = Slave receiver ACKed data
+            // Send data
+            if (i2c_index < i2c_size) {
+                i2c_sendbyte(i2c_buffer[i2c_index++]);
+            } else {
+                i2c_stop();
+            }
+            break;
+        case TW_BUS_ERROR:     // Bus error; Illegal START or STOP condition
+        case TW_MT_SLA_NACK:   // SLA+W transmitted, NACK received = Slave receiver with transmitted address doesn't exists?
+        case TW_MT_DATA_NACK:  // Data transmitted, NACK received
+        default:
+            i2c_stop();
+            break;
+    }
 }
 
 void setup() {
+    // === Ouput ===
     // Built in led Output
     DDRB |= (1 << PB5);
     PORTB &= ~(1 << PB5);
+
+    // === input ===
+
+    // === UART ===
+    usart_init();
 
     // === I2C ===
     i2c_init();
@@ -69,20 +61,6 @@ void setup() {
 }
 
 void loop() {
-    // Send 'H' to Slave and receive response
-    i2c_send_data(SLAVE_ADDRESS, 'H');
-    uint8_t response = i2c_receive_data();
-
-    // Perform any tasks with the received data
-    if (response == 'L') {
-        // If received 'L', turn off an LED or do other tasks
-        // ...
-    } else {
-        // Otherwise, turn on the LED or do other tasks
-        // ...
-    }
-
-    _delay_ms(1000);
 }
 
 int main(void) {
