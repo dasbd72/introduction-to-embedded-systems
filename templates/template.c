@@ -153,7 +153,7 @@ void setup() {
     // === I2C ===
     // i2c_init();
     // receivedData = 0;
-    // i2c_address(SLAVE_ADDRESS);
+    // i2c_sendaddr(SLAVE_ADDRESS);
 
     // === Interrupt ===
     // PCICR |= (1 << PCIE0);     // Enable PCINT[7:0]

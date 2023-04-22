@@ -45,7 +45,7 @@ void i2c_uninit(void) {
     TWCR &= ~(1 << TWEN);
 }
 
-void i2c_address(int address, int op) {
+void i2c_sendaddr(int address, int op) {
     TWDR = address << 1;
     TWCR = (1 << TWINT) | (1 << TWEA) | (0 << TWSTA) | (0 << TWSTO) | (0 << TWWC) | (1 << TWEN) | (1 << TWIE);
 }

@@ -50,7 +50,7 @@ void setup() {
 
     // === I2C ===
     i2c_init();
-    i2c_address(SLAVE_ADDRESS);
+    i2c_sendaddr(SLAVE_ADDRESS);
     receivedData = 0;
 
     // === Interrupt ===
