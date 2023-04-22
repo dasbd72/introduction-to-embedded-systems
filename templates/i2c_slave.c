@@ -3,7 +3,7 @@
 #include <i2c_slave.h>
 #include <stdio.h>
 #include <string.h>
-#include <uart.h>
+#include <usart.h>
 #include <util/delay.h>
 #include <util/twi.h>
 
@@ -11,15 +11,15 @@
 volatile uint8_t receivedData;  // Global variable to store received data
 
 ISR(TWI_vect) {
-    uart_sendhex(TW_STATUS);
+    usart_sendhex(TW_STATUS);
     switch (TW_STATUS) {
         case TW_SR_SLA_ACK:       // SLA+W received, ACK returned
         case TW_SR_DATA_ACK:      // SLA+W received, ACK returned after a general call
             receivedData = TWDR;  // Read data from TWDR register
-            uart_sendint(receivedData);
+            usart_sendint(receivedData);
             if (receivedData >= 1 && receivedData <= 9) {
                 PORTB |= (1 << PB5);
-                uart_sendbyte(receivedData);
+                usart_sendbyte(receivedData);
             } else {
                 PORTB &= ~(1 << PB5);
             }
@@ -49,7 +49,7 @@ void setup() {
     // === input ===
 
     // === UART ===
-    uart_init();
+    usart_init();
 
     // === I2C ===
     i2c_init();
