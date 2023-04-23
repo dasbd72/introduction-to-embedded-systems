@@ -6,15 +6,15 @@
 #include <util/delay.h>
 // #include <i2c_master.h>
 
-volatile uint8_t prev_PINB = 0xFF;
-volatile uint8_t prev_PINC = 0xFF;
-volatile uint8_t prev_PIND = 0xFF;
-volatile uint8_t activate_PINB = 0xFF;
-volatile uint8_t activate_PINC = 0xFF;
-volatile uint8_t activate_PIND = 0xFF;
-volatile uint8_t deactivate_PINB = 0xFF;
-volatile uint8_t deactivate_PINC = 0xFF;
-volatile uint8_t deactivate_PIND = 0xFF;
+volatile uint8_t prev_PINB = 0x00;
+volatile uint8_t activate_PINB = 0x00;
+volatile uint8_t deactivate_PINB = 0x00;
+volatile uint8_t prev_PINC = 0x00;
+volatile uint8_t activate_PINC = 0x00;
+volatile uint8_t deactivate_PINC = 0x00;
+volatile uint8_t prev_PIND = 0x00;
+volatile uint8_t activate_PIND = 0x00;
+volatile uint8_t deactivate_PIND = 0x00;
 
 ISR(PCINT0_vect) {
     activate_PINB = PINB & ~prev_PINB;

@@ -22,7 +22,7 @@ ISR(TWI_vect) {
         case TW_MT_ARB_LOST:  // Arbitration lost in SLA+W or data
             // Send slave address
             i2c_index = 0;
-            i2c_sendaddr(i2c_addr, I2C_TRANSFER);
+            i2c_sendaddr(i2c_addr, i2c_mode);
             break;
         case TW_MT_SLA_ACK:   // SLA+W transmitted, ACK received = Slave receiver ACKed address
         case TW_MT_DATA_ACK:  // Data transmitted, ACK received = Slave receiver ACKed data
