@@ -1,3 +1,4 @@
+#include <analog.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <i2c_master.h>
@@ -38,12 +39,6 @@ void lcd_sendcmd(uint8_t data) {
     lcd_sendbyte(data, 0);
 }
 
-void lcd_set_cursor(uint8_t col, uint8_t row) {
-    static uint8_t offsets[] = {0x00, 0x40, 0x14, 0x54};
-
-    lcd_sendcmd(LCD_SETDDRAMADDR | (col + offsets[row]));
-}
-
 void lcd_writebyte(uint8_t data) {
     lcd_sendbyte(data, LCD_RS);
 }
@@ -60,13 +55,13 @@ void lcd_reset(void) {
     lcd_sendcmd(0x33);  // 4 bit initialization of LCD
     lcd_sendcmd(0x32);  // 4 bit initialization of LCD
     lcd_sendcmd(LCD_FUNCTIONCMD | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS);
-    lcd_sendcmd(LCD_DISPLAYCMD | LCD_DISPLAYON | LCD_CURSORON | LCD_BLINKOFF);
+    lcd_sendcmd(LCD_DISPLAYCMD | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
     lcd_sendcmd(LCD_ENTRYCMD | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
     lcd_sendcmd(LCD_CLEARDISPLAY);  // Clear display
     lcd_sendcmd(LCD_RETURNHOME);    // Set cursor home
 
     lcd_backlight = LCD_BACKLIGHT;
-    lcd_writestr("Hello, World");
+    lcd_sendcmd(LCD_CLEARDISPLAY);  // Clear display
 }
 
 ISR(TWI_vect) {
@@ -92,6 +87,17 @@ ISR(TWI_vect) {
     }
 }
 
+volatile uint8_t prev_PINC = 0x00;
+volatile uint8_t activate_PINC = 0x00;
+volatile uint8_t deactivate_PINC = 0x00;
+
+ISR(PCINT1_vect) {
+    activate_PINC = PINC & ~prev_PINC;
+    deactivate_PINC = ~PINC & prev_PINC;
+
+    prev_PINC = PINC;
+}
+
 void setup() {
     // === Ouput ===
     // Built in led Output
@@ -99,6 +105,11 @@ void setup() {
     PORTB &= ~(1 << PB5);
 
     // === input ===
+    DDRC &= ~(1 << PC0);
+    DDRC &= ~(1 << PC1);
+
+    // === analog ===
+    analog_init();
 
     // === UART ===
     usart_init();
@@ -114,6 +125,15 @@ void setup() {
 }
 
 void loop() {
+    int val = analog_read(0);
+
+    char str[10];
+    sprintf(str, "%05d", val);
+
+    lcd_sendcmd(LCD_RETURNHOME);
+    lcd_writestr(str);
+
+    _delay_ms(1);
 }
 
 int main(void) {
